@@ -1,0 +1,31 @@
+services:
+  account-service:
+    build: ./account-service
+    ports:
+      - "8001:8001"
+    environment:
+      - ACCOUNT_DB_PATH=/data/account_service.db
+    volumes:
+      - account_data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  gateway:
+    build: ./gateway
+    ports:
+      - "8080:8000"
+    environment:
+      - ACCOUNT_SERVICE_URL=http://account-service:8001
+      - GATEWAY_DB_PATH=/data/gateway.db
+    volumes:
+      - gateway_data:/data
+    depends_on:
+      account-service:
+        condition: service_healthy
+
+volumes:
+  account_data:
+  gateway_data:
